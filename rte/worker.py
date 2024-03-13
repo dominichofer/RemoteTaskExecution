@@ -1,5 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
+from typing import Optional
 from .server import WorkerInterface
 from .heartbeat import Heart
 from .entities import Result
@@ -25,7 +26,7 @@ class Worker(ABC):
             self._refresher.stop()
             self.on_cancel()
 
-    def run(self, num_tasks: int | None = None) -> None:
+    def run(self, num_tasks: Optional[int] = None) -> None:
         while num_tasks is None or num_tasks > 0:
             task = self._server.get_task()
             logging.debug("Worker received task: %s", task)

@@ -1,4 +1,5 @@
 import unittest
+from typing import Optional
 from rte import WorkerInterface, Task, Result
 from .stubs import TrivialWorker, LongRunningWorker, RaisingWorker, CancellableWorker
 
@@ -9,7 +10,7 @@ class FakeServer(WorkerInterface):
         self.refreshs = 0
         self.cancel = False
 
-    def get_task(self) -> Task | None:
+    def get_task(self) -> Optional[Task]:
         return Task(0, b"task")
 
     def set_result(self, result: Result) -> None:

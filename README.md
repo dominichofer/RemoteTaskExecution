@@ -1,11 +1,11 @@
 # Remote Task Execution
 
 ## Description
-This project is about executing tasks remotely. It allows users to run commands on a remote machine from their local machine.
+This project is about executing tasks remotely. It allows users to run tasks on a remote machine from their local machine.
 
 ## Installation
-To install with pip into a virtual environment, run
-```
+To install with pip into a virtual environment, execute
+```bash
 python -m venv .venv
 pip install .
 ```

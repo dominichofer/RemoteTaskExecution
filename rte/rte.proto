@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+message Empty {}
+message Bool { bool value = 1; }
+
+message Task {
+  uint32 id = 1;
+  bytes data = 2;
+}
+
+message OptionalTask {
+  optional uint32 id = 1;
+  optional bytes data = 2;
+}
+
+message TaskId { uint32 value = 1; }
+message TaskIds { repeated uint32 ids = 1; }
+message OptionalTaskId { optional uint32 value = 1; }
+
+message Result {
+  uint32 task_id = 1;
+  bool success = 2;
+  bytes data = 3;
+}
+
+message OptionalResult {
+  optional uint32 task_id = 1;
+  optional bool success = 2;
+  optional bytes data = 3;
+}
+
+message OptionalResults { repeated OptionalResult results = 1; }
+
+service Rte {
+  rpc get_next_id(Empty) returns (OptionalTaskId);
+  rpc return_id(TaskId) returns (Empty);
+  rpc add_task(Task) returns (Empty);
+  rpc get_task(Empty) returns (OptionalTask);
+  rpc set_result(Result) returns (Empty);
+  rpc get_results(TaskIds) returns (OptionalResults);
+  rpc cancel_task(TaskId) returns (Empty);
+  rpc is_task_canceled(TaskId) returns (Bool);
+  rpc release_waiting_workers(Empty) returns (Empty);
+}

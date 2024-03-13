@@ -7,12 +7,13 @@ name = "rte"
 version = "0.1.0"
 
 dependencies = [
+    "protobuf",
     "grpcio",
-    "grpcio-tools",
 ]
 
 [project.optional-dependencies]
 dev = [
+    "grpcio-tools",
     "pytest",
     "pylint",
     "mypy",

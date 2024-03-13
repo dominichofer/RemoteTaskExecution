@@ -4,11 +4,7 @@
 This project is about executing tasks remotely. It allows users to run tasks on a remote machine from their local machine.
 
 ## Installation
-To install with pip into a virtual environment, execute
-```bash
-python -m venv .venv
-pip install .
-```
+Use pip.
 
 ## Usage
 Create a worker and a client, by implementing their abstract methods.

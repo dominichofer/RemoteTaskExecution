@@ -8,11 +8,11 @@ version = "0.1.0"
 
 dependencies = [
     "grpcio",
-    "grpcio-tools",
 ]
 
 [project.optional-dependencies]
 dev = [
+    "grpcio-tools",
     "pytest",
     "pylint",
     "mypy",

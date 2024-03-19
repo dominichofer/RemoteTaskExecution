@@ -7,10 +7,9 @@ from .server import ClientInterface
 
 
 class Client(ABC):
-    def __init__(self, server: ClientInterface, refresh_time: float, retries: int = 0) -> None:
+    def __init__(self, server: ClientInterface, refresh_time: float) -> None:
         self._server = server
         self._refresh_time = refresh_time
-        self._retries = retries
         self._pending_task_ids: set[int] = set()
 
     @abstractmethod

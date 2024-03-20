@@ -66,6 +66,8 @@ class Server(ServerInterface):
         with self._lock:
             logging.debug("Task %s timed out", task_id)
             self._results[task_id] = Result(task_id, success=False, data=b"")
+            if task_id in self._canceled:
+                self._canceled.remove(task_id)
 
     def get_next_id(self) -> Optional[int]:
         try:

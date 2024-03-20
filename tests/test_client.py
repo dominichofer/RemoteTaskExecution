@@ -74,7 +74,7 @@ class TestClient(unittest.TestCase):
 
 
 class TestBatchClient(unittest.TestCase):
-    def test_successfull_workflow(self) -> None:
+    def test_successfull_task(self) -> None:
         server = ServerStub([13], [Result(13, True, b"result")])
         client = BatchClient(server, 0.05)
 
@@ -85,6 +85,16 @@ class TestBatchClient(unittest.TestCase):
         if results[0] is None:
             self.fail("Result is None")
         self.assertEqual(results[0], b"result")
+
+    def test_failed_task(self) -> None:
+        server = ServerStub([13], [Result(13, False, b"")])
+        client = BatchClient(server, 0.05)
+
+        results = client.solve([b"task"])
+
+        if len(results) < 1:
+            self.fail("No result available")
+        self.assertEqual(results[0], None)
 
     def test_retry_on_delayed_next_id(self) -> None:
         server = ServerStub([None, 13], [Result(13, True, b"result")])

@@ -45,7 +45,7 @@ class Client(ABC):
         results = self._server.get_results(list(self._pending_task_ids))
         logging.debug("Client received results: %s", results)
         for result in results:
-            if result:
+            if result is not None:
                 self.on_result(result)
                 self._pending_task_ids.remove(result.task_id)
 
@@ -81,7 +81,10 @@ class BatchClient(Client):
         return Task(task_id, self._tasks.pop(0))
 
     def on_result(self, result: Result) -> None:
-        self._results[result.task_id] = result.data
+        if result.success:
+            self._results[result.task_id] = result.data
+        else:
+            self._results[result.task_id] = None
 
     def is_finished(self) -> bool:
         return (not self._tasks) and (len(self._results) == len(self._task_ids))

@@ -26,7 +26,7 @@ class TestSystem(unittest.TestCase):
             self.assertEqual(result.success, True)
             self.assertEqual(result.data, b"task")
 
-    def test_many_workers_one_producer(self) -> None:
+    def test_many_workers_one_client(self) -> None:
         server = Server(0.02)
         client = TrivialClient(server, 0.01)
         client.tasks = [b"task" for _ in range(100)]
@@ -49,7 +49,7 @@ class TestSystem(unittest.TestCase):
             self.assertEqual(result.success, True)
             self.assertEqual(result.data, b"task")
 
-    def test_many_workers_many_producers(self) -> None:
+    def test_many_workers_many_clients(self) -> None:
         server = Server(0.02)
         clients = [TrivialClient(server, 0.01) for _ in range(10)]
         for client in clients:

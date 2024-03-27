@@ -64,7 +64,7 @@ class Server(ServerInterface):
 
     def _on_task_timeout(self, task_id: int) -> None:
         with self._lock:
-            logging.debug("Task %s timed out", task_id)
+            logging.info("Task %s timed out", task_id)
             self._results[task_id] = Result(task_id, success=False, data=b"")
             if task_id in self._canceled:
                 self._canceled.remove(task_id)
@@ -72,7 +72,7 @@ class Server(ServerInterface):
     def get_next_id(self) -> Optional[int]:
         try:
             task_id = self._unassigned_ids.get_nowait()
-            logging.debug("Server sends task id: %s", task_id)
+            logging.info("Server sends task id: %s", task_id)
             return task_id
         except Empty:
             logging.debug("Server has no task ids")
@@ -83,7 +83,7 @@ class Server(ServerInterface):
         self._unassigned_ids.put(task_id)
 
     def add_task(self, task: Task) -> None:
-        logging.debug("Server received task: %s", task.id)
+        logging.info("Server received task: %s", task.id)
         self._tasks.put(task)
 
     def get_task(self) -> Optional[Task]:
@@ -95,11 +95,11 @@ class Server(ServerInterface):
             return None
         with self._lock:
             self._heartbeats.add(task.id)
-            logging.debug("Server sends task for id: %s", task.id)
+            logging.info("Server sends task for id: %s", task.id)
             return task
 
     def set_result(self, result: Result) -> None:
-        logging.debug("Server received result for task: %s", result.task_id)
+        logging.info("Server received result for task: %s", result.task_id)
         tid = result.task_id
         with self._lock:
             self._heartbeats.remove(tid)
@@ -113,7 +113,7 @@ class Server(ServerInterface):
             return [self._results.pop(tid, None) for tid in task_ids]
 
     def cancel_task(self, task_id: int) -> None:
-        logging.debug("Server cancels task: %s", task_id)
+        logging.info("Server cancels task: %s", task_id)
         with self._lock:
             self._heartbeats.remove(task_id)
             self._canceled.add(task_id)
@@ -123,6 +123,7 @@ class Server(ServerInterface):
         with self._lock:
             self._heartbeats.beat(task_id)
             if task_id in self._canceled:
+                logging.info("Server confirms task is canceled: %s", task_id)
                 self._canceled.remove(task_id)
                 return True
             return False
@@ -134,7 +135,7 @@ class Server(ServerInterface):
                 self._unassigned_ids.get_nowait()
             except Empty:
                 break
-            logging.debug("Server releases a waiting worker")
+            logging.info("Server releases a waiting worker")
             self._tasks.put(None)
 
     def stop(self) -> None:

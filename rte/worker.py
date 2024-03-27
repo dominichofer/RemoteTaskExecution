@@ -21,15 +21,16 @@ class Worker(ABC):
         pass
 
     def _check_task(self, task_id: int) -> None:
+        logging.debug("Worker is checking task: %s", task_id)
         if self._server.is_task_canceled(task_id):
-            logging.debug("Task %s was canceled", task_id)
+            logging.info("Task %s was canceled", task_id)
             self._refresher.stop()
             self.on_cancel()
 
     def run(self, num_tasks: Optional[int] = None) -> None:
         while num_tasks is None or num_tasks > 0:
             task = self._server.get_task()
-            logging.debug("Worker received task: %s", task)
+            logging.info("Worker received task: %s", task)
             if task is None:
                 break
 
@@ -37,10 +38,10 @@ class Worker(ABC):
             try:
                 logging.debug("Worker is executing task: %s", task.id)
                 ret = self.execute_task(task.data)
-                logging.debug("Worker finished task: %s", task.id)
+                logging.info("Worker finished task: %s", task.id)
                 result = Result(task.id, success=True, data=ret)
             except Exception as _:
-                logging.exception("Worker failed task: %s", task.id)
+                logging.info("Worker failed task: %s", task.id)
                 result = Result(task.id, success=False, data=b"")
             self._refresher.stop()
             self._refresher.join()

@@ -24,39 +24,55 @@ class Client(ABC):
     def is_finished(self) -> bool:
         "Returns True iff the client has no more tasks to process."
 
-    def _process_tasks(self) -> None:
+    def _process_tasks(self) -> bool:
+        """
+        Requests a new task from the server.
+        Returns True if a task was received and added.
+        """
         task_id = self._server.get_next_id()
         logging.debug("Client received task id: %s", task_id)
         if task_id is None:
-            return
+            return False
 
         task = self.on_request(task_id)
         if task is None:
             logging.debug("Client is returning task id: %s", task_id)
             self._server.return_id(task_id)
+            return False
         else:
-            logging.debug("Client is adding task: %s", task)
+            logging.info("Client is adding task: %s", task)
             self._server.add_task(task)
             self._pending_task_ids.add(task.id)
+            return True
 
-    def _process_results(self) -> None:
+    def _process_results(self) -> bool:
+        """
+        Requests results from the server.
+        Returns True if any results were received.
+        """
         if not self._pending_task_ids:
-            return
+            return False
         results = self._server.get_results(list(self._pending_task_ids))
         logging.debug("Client received results: %s", results)
+        any_result = False
         for result in results:
             if result is not None:
+                any_result = True
+                logging.info("Client received result: %s", result)
                 self.on_result(result)
                 self._pending_task_ids.remove(result.task_id)
+        return any_result
 
     def run(self) -> None:
         while not self.is_finished():
-            self._process_tasks()
-            self._process_results()
-            sleep(self._refresh_time)
+            added_task = self._process_tasks()
+            received_result = self._process_results()
+            if not added_task and not received_result:
+                # Sleep if there was no activity
+                sleep(self._refresh_time)
 
     def cancel_task(self, task_id: int) -> None:
-        logging.debug("Client is canceling task: %s", task_id)
+        logging.info("Client is canceling task: %s", task_id)
         self._server.cancel_task(task_id)
 
 
@@ -81,10 +97,7 @@ class BatchClient(Client):
         return Task(task_id, self._tasks.pop(0))
 
     def on_result(self, result: Result) -> None:
-        if result.success:
-            self._results[result.task_id] = result.data
-        else:
-            self._results[result.task_id] = None
+        self._results[result.task_id] = result.data if result.success else None
 
     def is_finished(self) -> bool:
         return (not self._tasks) and (len(self._results) == len(self._task_ids))

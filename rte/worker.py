@@ -40,8 +40,9 @@ class Worker(ABC):
                 ret = self.execute_task(task.data)
                 logging.info("Worker finished task: %s", task.id)
                 result = Result(task.id, success=True, data=ret)
-            except Exception as _:
+            except Exception as e:
                 logging.info("Worker failed task: %s", task.id)
+                logging.error(e)
                 result = Result(task.id, success=False, data=b"")
             self._refresher.stop()
             self._refresher.join()

@@ -85,10 +85,14 @@ class MultiHeartbeatMonitor:
     def _check_heartbeats(self) -> None:
         while not self._stop_event.wait(self._period):
             with self._lock:
-                for heart_id, heartbeat in list(self._heartbeats.items()):
-                    if not heartbeat.is_alive():
-                        self._heartbeats.pop(heart_id, None)
-                        self._on_death(heart_id)
+                dead_hearts = [
+                    heart_id
+                    for heart_id, heartbeat in self._heartbeats.items()
+                    if not heartbeat.is_alive()
+                ]
+                for heart_id in dead_hearts:
+                    self._heartbeats.pop(heart_id)
+                    self._on_death(heart_id)
 
     def add(self, heart_id: int) -> None:
         with self._lock:

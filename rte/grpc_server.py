@@ -21,9 +21,9 @@ from .rte_pb2_grpc import RteServicer, add_RteServicer_to_server
 class GrpcServer(RteServicer):
     """GrpcServer is a server that communicates with the client using gRPC."""
 
-    def __init__(self, server: ServerInterface, port: int, max_workers: Optional[int] = None) -> None:
+    def __init__(self, server: ServerInterface, port: int) -> None:
         self.server = server
-        self.grpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers))
+        self.grpc_server = grpc.server(futures.ThreadPoolExecutor(1_000_000_000))
         add_RteServicer_to_server(self, self.grpc_server)
         self.grpc_server.add_insecure_port(f"[::]:{port}")
 

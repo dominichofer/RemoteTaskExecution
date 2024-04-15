@@ -1,5 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
+from collections import deque
 from queue import Queue, Empty
 from threading import Lock
 from typing import Optional
@@ -55,7 +56,7 @@ class ServerInterface(WorkerInterface, ClientInterface):
 class Server(ServerInterface):
     def __init__(self, task_timeout: float) -> None:
         self._lock = Lock()
-        self._unassigned_ids: Queue[int] = Queue()
+        self._unassigned_ids: deque[int] = deque()
         self._tasks: Queue[Optional[Task]] = Queue()
         self._next_id = IdGenerator()
         self._results: dict[int, Result] = {}
@@ -71,16 +72,16 @@ class Server(ServerInterface):
 
     def get_next_id(self) -> Optional[int]:
         try:
-            task_id = self._unassigned_ids.get_nowait()
+            task_id = self._unassigned_ids.popleft()
             logging.info("Server sends task id: %s", task_id)
             return task_id
-        except Empty:
+        except IndexError:
             logging.debug("Server has no task ids")
             return None
 
     def return_id(self, task_id: int) -> None:
         logging.debug("Server received returned task id: %s", task_id)
-        self._unassigned_ids.put(task_id)
+        self._unassigned_ids.append(task_id)
 
     def add_task(self, task: Task) -> None:
         logging.info("Server received task: %s", task.id)
@@ -88,7 +89,7 @@ class Server(ServerInterface):
 
     def get_task(self) -> Optional[Task]:
         logging.debug("Server received task request")
-        self._unassigned_ids.put(self._next_id())
+        self._unassigned_ids.append(self._next_id())
         task = self._tasks.get()
         if task is None:
             logging.debug("Server has no tasks")
@@ -132,8 +133,8 @@ class Server(ServerInterface):
         "Releases all waiting workers."
         while True:
             try:
-                self._unassigned_ids.get_nowait()
-            except Empty:
+                self._unassigned_ids.popleft()
+            except IndexError:
                 break
             logging.info("Server releases a waiting worker")
             self._tasks.put(None)

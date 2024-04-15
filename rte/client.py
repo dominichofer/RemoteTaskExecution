@@ -1,5 +1,7 @@
 import logging
+from dataclasses import dataclass
 from time import sleep
+from collections import deque
 from abc import ABC, abstractmethod
 from typing import Optional
 from .entities import Task, Result
@@ -76,28 +78,47 @@ class Client(ABC):
         self._server.cancel_task(task_id)
 
 
+@dataclass
+class _Task:
+    index: int
+    attempts: int
+    data: bytes
+
+
 class BatchClient(Client):
-    def __init__(self, server: ClientInterface, refresh_time: float) -> None:
+    def __init__(self, server: ClientInterface, refresh_time: float, attempts: int = 1) -> None:
         super().__init__(server, refresh_time)
-        self._tasks: list[bytes]
-        self._results: dict[int, Optional[bytes]]
-        self._task_ids: list[int]
+        self._attempts = attempts
+        self._tasks: deque[_Task]
+        self._sent_tasks: dict[int, _Task]  # task_id -> task
+        self._results: list[Optional[bytes]]
 
     def solve(self, tasks: list[bytes]) -> list[Optional[bytes]]:
-        self._tasks = tasks
-        self._results = {}
-        self._task_ids = []
+        self._tasks = deque(_Task(i, 0, task) for i, task in enumerate(tasks))
+        self._sent_tasks = {}
+        self._results = [None] * len(tasks)
         super().run()
-        return [self._results[tid] for tid in self._task_ids]
+        return self._results
 
     def on_request(self, task_id: int) -> Optional[Task]:
         if not self._tasks:
             return None
-        self._task_ids.append(task_id)
-        return Task(task_id, self._tasks.pop(0))
+        task = self._tasks.popleft()
+        self._sent_tasks[task_id] = task
+        return Task(task_id, task.data)
 
     def on_result(self, result: Result) -> None:
-        self._results[result.task_id] = result.data if result.success else None
+        task = self._sent_tasks.pop(result.task_id)
+        task.attempts += 1
+        if result.success:
+            self._results[task.index] = result.data
+        else:
+            if task.attempts < self._attempts:
+                # Retry task
+                self._tasks.appendleft(task)
+            else:
+                # Task failed
+                self._results[task.index] = None
 
     def is_finished(self) -> bool:
-        return (not self._tasks) and (len(self._results) == len(self._task_ids))
+        return not self._tasks and not self._sent_tasks
